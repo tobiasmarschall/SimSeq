@@ -20,7 +20,7 @@ import org.apache.commons.cli.PosixParser;
  * @author john
  */
 public class Main{
-    private static String lastUpdate = "4.12.2011";
+    private static String lastUpdate = "11.10.2012";
     /**
      * @param args the command line arguments
      */
@@ -38,6 +38,7 @@ public class Main{
             String def_read_number = "1000000";
             String def_adapt1 = "AGATCGGAAGAGCGGTTCAGCAGGAATGCCGAGACCG";
             String def_adapt2 = "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT";
+            InsertSizeDistribution insertSizeDistribution = null;
 
             Options options = new Options();
             //REQUIRED ARGS
@@ -64,6 +65,7 @@ public class Main{
             options.addOption(null,"mate_pulldown_error_p",true, "If using a mate-pair library, what is the probability that a read does not include the biotin marker? Default: "+def_mate_non_biotin_pulldown_p);
             options.addOption(null,"phred64",false,"Output phred+64 quality string rather than phred+33");
             options.addOption(null,"inf_id",false,"Output location information in the read ID. Currently this is only informative for paired-end data and note mate paired.");
+            options.addOption("D","distribution",true,"Internal segment size distribution (text file, two columns: <insert-size> <probability>). Refers to size of whole framents, including reads.");
             options.addOption("h", "help",false,"Print this usage message.");
             options.addOption(null,"debug",false,"Write debug info to stderr.");
             CommandLineParser parser = new PosixParser();
@@ -76,6 +78,12 @@ public class Main{
             }
             if(!cmd.hasOption('o') || !cmd.hasOption('r')){
                 throw new ParseException("Missing required argument, try -h or --help for help.");
+            }
+            if(cmd.hasOption('D')) {
+                if (cmd.hasOption('l') || cmd.hasOption('s') || cmd.hasOption('m')) {
+                    throw new ParseException("Option -D cannot be combined with -l and -s.");
+                }
+                insertSizeDistribution = new InsertSizeDistribution(cmd.getOptionValue('D'));
             }
             File out = new File(cmd.getOptionValue('o'));
             File ref  = new File(cmd.getOptionValue('r'));
@@ -269,7 +277,7 @@ public class Main{
                                 read1_length,
                                 read2_length,
                                 adapter1,adapter2,
-                                r);
+                                r,insertSizeDistribution);
                         if(dadd != null){
                             dadd.AddDiploidRead(sr1);
                             dadd.AddDiploidRead(sr2);

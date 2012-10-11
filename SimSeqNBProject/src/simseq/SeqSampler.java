@@ -24,7 +24,7 @@ public class SeqSampler {
             SamRecord sr2, String qual1, String qual2,
             int mean_ins, int stdev,
             int read1_len, int read2_len,
-            String adapter1, String adapter2, Random r) {
+            String adapter1, String adapter2, Random r, InsertSizeDistribution insertSizeDistribution) {
         int p, l;
         if (mean_ins > this.len) {
             throw new RuntimeException("Fasta file has shorter sequence than the requested mean library length");
@@ -35,7 +35,8 @@ public class SeqSampler {
 
         do {
             p = r.nextInt(this.len);
-            l = ((int) (r.nextGaussian() * ((double) stdev))) + mean_ins;
+            if (insertSizeDistribution != null) l = insertSizeDistribution.sample(r);
+            else l = ((int) (r.nextGaussian() * ((double) stdev))) + mean_ins;
         } while ((p + Math.max(l, 0)) > this.len
                 || (p + read1_len) > this.len
                 || (p + Math.max(l, 0) - read2_len) < 0);
