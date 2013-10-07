@@ -33,24 +33,12 @@ public class SeqSampler {
             p = r.nextInt(this.len);
         } while ((p + read1_len) > this.len);
         sr1.qualLine.replace(0, qual1.length(), qual1);
-
-        if (r.nextBoolean()) { //sample from forward strand
-            sr1.seqLine.replace(seq.substring(p, p + read1_len));
-            //strand settings
-            sr1.mate_reverse_strand = false;
-            sr1.query_reverse_strand = false;
-            sr1.pos = p + 1; //1 based
-            sr1.mpos = -1;
-            sr1.isize = -1;
-        } else {//sample from reverse strand
-            sr1.seqLine.replace(seq.substring(p - read1_len, p));
-            //strand settings
-            sr1.mate_reverse_strand = false;
-            sr1.query_reverse_strand = true;
-            sr1.pos = p + 1; //1 based
-            sr1.mpos = -1;
-            sr1.isize = -1;
-        }
+        sr1.seqLine.replace(seq.substring(p, p + read1_len));
+        sr1.mate_reverse_strand = false;
+        sr1.query_reverse_strand = r.nextBoolean();
+        sr1.pos = p + 1; //1 based
+        sr1.mpos = -1;
+        sr1.isize = -1;
     }
 
     public void PESample(SamRecord sr1,
