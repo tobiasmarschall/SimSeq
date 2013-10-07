@@ -20,6 +20,39 @@ public class SeqSampler {
         this.len = sequence.length();
     }
 
+    public void SESample(SamRecord sr1, String qual1, int read1_len, String adapter1, Random r) {
+        int p;
+        //increment the seq index
+        sr1.seqIndex++;
+        sr1.first = false;
+        sr1.second = false;
+        sr1.paired = false;
+        sr1.proper_pair = false;
+        
+        do {
+            p = r.nextInt(this.len);
+        } while ((p + read1_len) > this.len);
+        sr1.qualLine.replace(0, qual1.length(), qual1);
+
+        if (r.nextBoolean()) { //sample from forward strand
+            sr1.seqLine.replace(seq.substring(p, p + read1_len));
+            //strand settings
+            sr1.mate_reverse_strand = false;
+            sr1.query_reverse_strand = false;
+            sr1.pos = p + 1; //1 based
+            sr1.mpos = -1;
+            sr1.isize = -1;
+        } else {//sample from reverse strand
+            sr1.seqLine.replace(seq.substring(p - read1_len, p));
+            //strand settings
+            sr1.mate_reverse_strand = false;
+            sr1.query_reverse_strand = true;
+            sr1.pos = p + 1; //1 based
+            sr1.mpos = -1;
+            sr1.isize = -1;
+        }
+    }
+
     public void PESample(SamRecord sr1,
             SamRecord sr2, String qual1, String qual2,
             int mean_ins, int stdev,

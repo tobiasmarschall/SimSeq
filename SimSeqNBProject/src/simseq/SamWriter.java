@@ -60,11 +60,15 @@ public class SamWriter {
         writer.print("\t");
         writer.print(rec.cigar); //cigar
         writer.print("\t");
-        writer.print("="); //name of mate's reference(MRNM) = for same
-        writer.print("\t");
-        writer.print(Integer.toString(rec.mpos));//mpos
-        writer.print("\t");
-        writer.print(Integer.toString(rec.isize));//isize
+        if (rec.mpos >= 0) {
+            writer.print("="); //name of mate's reference(MRNM) = for same
+            writer.print("\t");
+            writer.print(Integer.toString(rec.mpos));//mpos
+            writer.print("\t");
+            writer.print(Integer.toString(rec.isize));//isize
+        } else {
+            writer.print("*\t*\t*");
+        }
         writer.print("\t");
         writer.print(rec.seqLine.toString());//seq
         writer.print("\t");

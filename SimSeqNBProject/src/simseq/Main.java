@@ -59,6 +59,7 @@ public class Main{
             options.addOption("u", "duplicate_probability", true, "probability of generating a duplicate. Default: "+def_duplicate_p);
             options.addOption("l", "insert_size",true,"mean library insert size for either mate-paired or paired-end. Default: "+def_library_ins_mean);
             options.addOption("s", "insert_stdev",true,"mean library insert stdev for either mate-paired or paired-end. Default: "+def_library_ins_stdev);
+            options.addOption("S", "single_end",false,"Simulate single-end rather than paired-end reads.");
             options.addOption("m", "mate_pair",false,"Perform mate-pair rather than paired end run.");
             options.addOption(null,"mate_frag",true, "If using a mate-pair library, what is your desired loop fragmentation size? Default: "+def_mate_sheer_mean);
             options.addOption(null,"mate_frag_stdev",true,"If using a mate-pair library, what is your desired loop fragmentation size standard deviation? Default: "+def_mate_sheer_stdev);
@@ -119,7 +120,11 @@ public class Main{
             String adapter1 = tadapt1.toString();
             String adapter2 = tadapt2.toString(); //reverse complemented
             
-            
+            if(cmd.hasOption('S')){
+                if (cmd.hasOption("error2") || cmd.hasOption('m') || cmd.hasOption('l') || cmd.hasOption('s') || cmd.hasOption('2')) {
+                    throw new ParseException("Option -S cannot be combined with -2, -m, -l, or -s.");
+                }
+            }
             
             if(cmd.hasOption("phred64"))phred33=false;
             if(cmd.hasOption('d')){
@@ -180,7 +185,54 @@ public class Main{
                                 tmpqual1 = null,
                                 tmpqual2 = null;
                 boolean duplicate = false;
-                if(cmd.hasOption('m')){//mate pair run?
+                if(cmd.hasOption('S')){
+                    for(long i = 0; i < num; i++){
+                        sampler.SESample(sr1, qual1, read1_length, adapter1, r);
+                        tmpseq1 = tmpseq2 = tmpqual1 = tmpqual2 = null;
+                        duplicate = false;
+                        if(r.nextFloat()< duplicate_p){
+                            duplicate = true;
+                            tmpseq1 = sr1.seqLine.toString();
+                            tmpqual1 = sr1.qualLine.toString();
+                        }
+                        if(eadd != null && eadd2 == null){
+                                eadd.AddErrorRead(sr1);
+                        }else if(eadd2 != null){
+                                eadd.AddErrorRead(sr1);
+                        }
+
+                        swrite.write(sr1);
+
+                        while(duplicate){
+                            //mark duplicate
+                            i++;
+                            if(i>=num){
+                                duplicate = false;
+                                sr1.duplicate = false;
+                                break;
+                            }//double check we aren't duplicating over the number of reads
+                            sr1.seqIndex++; //increment the counters
+                            
+                            sr1.duplicate = duplicate;
+                            //restore original reads and qual prior to error
+                            sr1.seqLine = new StringBuilderDNA(tmpseq1);
+                            sr1.qualLine = new StringBuilder(tmpqual1);
+                            if(eadd != null && eadd2 == null){
+                                eadd.AddErrorRead(sr1);
+                            }else if(eadd2 != null){
+                                eadd.AddErrorRead(sr1);
+                            }
+                            swrite.write(sr1);
+                            if(r.nextFloat()< duplicate_p){
+                                duplicate = true;
+                            }else{//exit loop
+                                duplicate = false;
+                                sr1.duplicate = false;
+                                break;
+                            }
+                        }
+                    }
+                } else if(cmd.hasOption('m')){//mate pair run?
                     for(long i = 0; i < num; i++){
                         /*
                          *     public void MPSample(SamRecord sr1,
@@ -261,8 +313,7 @@ public class Main{
 
 
                     }
-
-                }else{ //regular run?
+                }else{ //regular paired-end run?
                     for(long i = 0; i < num; i++){
                         /*
                          *     public void PESample(SamRecord sr1,
